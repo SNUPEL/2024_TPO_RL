@@ -17,37 +17,51 @@ torch.manual_seed(1)
 
 class ConvLayer(nn.Module):
     def __init__(self, node_fea_len, edge_fea_len):
+        """
+        Initialize the ConvLayer class.
+
+        Parameters:
+        - node_fea_len (int): Length of the node feature vector.
+        - edge_fea_len (int): Length of the edge feature vector.
+        """
         super(ConvLayer, self).__init__()
         self.node_fea_len = node_fea_len
-        self.edge_fea_len = edge_fea_len  # 여기서 fc layer 하나더 추가해도 될듯
-        self.fc_full = nn.Linear(2 * self.node_fea_len + self.edge_fea_len,
-                                 2 * self.node_fea_len).to(device)
+        self.edge_fea_len = edge_fea_len
+
+        # Fully connected layer for feature transformation
+        self.fc_full = nn.Linear(2 * self.node_fea_len + self.edge_fea_len, 2 * self.node_fea_len).to(device)
         self.sigmoid = nn.Sigmoid()
         self.softplus = nn.Softplus()
-        self.alpha = nn.Parameter(torch.tensor(0.7,dtype=torch.float32))
+        self.alpha = nn.Parameter(torch.tensor(0.7, dtype=torch.float32))
+
+        # Initialize weights
         self.initialize_weights()
 
-    
     def initialize_weights(self):
+        """
+        Initialize the weights of the network using He initialization.
+        """
         for m in self.modules():
             if isinstance(m, nn.Linear):
-                # He 초기화를 사용하여 가중치를 초기화합니다.
                 nn.init.kaiming_uniform_(m.weight, mode='fan_in', nonlinearity='relu')
-                # 편향을 0으로 초기화합니다.
                 nn.init.zeros_(m.bias)
-            elif isinstance(m, nn.BatchNorm1d):
-                # 배치 정규화 레이어의 가중치를 초기화합니다.
-                nn.init.ones_(m.weight)
-                nn.init.zeros_(m.bias)
-    
+
     def forward(self, node_in_fea, edge_fea, edge_fea_idx):
+        """
+        Forward pass through the convolution layer.
+
+        Parameters:
+        - node_in_fea (torch.Tensor): Input node features.
+        - edge_fea (torch.Tensor): Input edge features.
+        - edge_fea_idx (torch.Tensor): Edge feature indices.
+
+        Returns:
+        - out (torch.Tensor): Output node features after convolution.
+        """
         N, M = edge_fea_idx.shape
-        # convolution
-        node_edge_fea = node_in_fea[edge_fea_idx, :]  # edge fea idx -> 시작 노드 -도착 노드
-
-        total_nbr_fea = torch.cat([node_in_fea.unsqueeze(1).expand(N, M, self.node_fea_len), node_edge_fea, edge_fea],
-                                  dim=2)
-
+        # Convolution operation
+        node_edge_fea = node_in_fea[edge_fea_idx, :]  # Edge feature indices for start and end nodes
+        total_nbr_fea = torch.cat([node_in_fea.unsqueeze(1).expand(N, M, self.node_fea_len), node_edge_fea, edge_fea], dim=2)
         total_gated_fea = self.fc_full(total_nbr_fea)
         nbr_filter, nbr_core = total_gated_fea.chunk(2, dim=2)
         nbr_filter = self.sigmoid(nbr_filter)
@@ -56,51 +70,67 @@ class ConvLayer(nn.Module):
         nbr_filter = nbr_filter * mask.unsqueeze(2)
         nbr_core = nbr_filter * mask.unsqueeze(2)
         nbr_sumed = torch.sum(nbr_filter * nbr_core, dim=1)
-        
-        out = self.softplus(self.alpha*node_in_fea + nbr_sumed)
+        out = self.softplus(self.alpha * node_in_fea + nbr_sumed)
 
         return out
 
 
 class CrystalGraphConvNet(nn.Module):
-    def __init__(self, orig_node_fea_len, orig_edge_fea_len, edge_fea_len, node_fea_len,
-                 final_node_len, dis):
+    def __init__(self, orig_node_fea_len, orig_edge_fea_len, edge_fea_len, node_fea_len, final_node_len, dis):
+        """
+        Initialize the CrystalGraphConvNet class.
+
+        Parameters:
+        - orig_node_fea_len (int): Original length of the node feature vector.
+        - orig_edge_fea_len (int): Original length of the edge feature vector.
+        - edge_fea_len (int): Length of the edge feature vector.
+        - node_fea_len (int): Length of the node feature vector.
+        - final_node_len (int): Final length of the node feature vector.
+        - dis (torch.Tensor): Distance matrix.
+        """
         super(CrystalGraphConvNet, self).__init__()
         self.embedding_n = nn.Linear(orig_node_fea_len, node_fea_len).to(device)
         self.embedding_e = nn.Linear(orig_edge_fea_len, edge_fea_len).to(device)
-        self.dis=dis
-        N=dis.shape[0]
+        self.dis = dis
+        N = dis.shape[0]
         self.convs1 = ConvLayer(node_fea_len, edge_fea_len)
         self.convs2 = ConvLayer(node_fea_len, edge_fea_len)
         self.convs3 = ConvLayer(node_fea_len, edge_fea_len)
-        self.final_layer = nn.Linear(node_fea_len,int(final_node_len/2)).to(device)
-        self.conv_to_fc = nn.Linear(final_node_len*N,256).to(device)
+        self.final_layer = nn.Linear(node_fea_len, int(final_node_len / 2)).to(device)
+        self.conv_to_fc = nn.Linear(final_node_len * N, 256).to(device)
         self.readout1 = nn.Linear(256, 128).to(device)
         self.readout2 = nn.Linear(128, 64).to(device)
         self.fc_out = nn.Linear(64, 1).to(device)
-        self.DA_weight = nn.Parameter(torch.tensor(48/5,dtype=torch.float32))  # Learnable weight parameter
-        self.DA_bias = nn.Parameter(torch.tensor(-28/5,dtype=torch.float32))
-        self.DA_act=nn.Sigmoid()
-
+        self.DA_weight = nn.Parameter(torch.tensor(48 / 5, dtype=torch.float32))
+        self.DA_bias = nn.Parameter(torch.tensor(-28 / 5, dtype=torch.float32))
+        self.DA_act = nn.Sigmoid()
         self.act_fun = nn.ELU()
 
-
+        # Initialize weights
         self.initialize_weights()
-                     
+
     def initialize_weights(self):
+        """
+        Initialize the weights of the network using He initialization.
+        """
         for m in self.modules():
             if isinstance(m, nn.Linear):
-                # He 초기화를 사용하여 가중치를 초기화합니다.
                 nn.init.kaiming_uniform_(m.weight, mode='fan_in', nonlinearity='relu')
-                # 편향을 0으로 초기화합니다.
                 nn.init.zeros_(m.bias)
-            elif isinstance(m, nn.BatchNorm1d):
-                # 배치 정규화 레이어의 가중치를 초기화합니다.
-                nn.init.ones_(m.weight)
-                nn.init.zeros_(m.bias)
-        
+
     def forward(self, node_fea, edge_fea, edge_fea_idx):
-        node_fea = self.embedding_n(node_fea)  # N,fea
+        """
+        Forward pass through the CrystalGraphConvNet.
+
+        Parameters:
+        - node_fea (torch.Tensor): Input node features.
+        - edge_fea (torch.Tensor): Input edge features.
+        - edge_fea_idx (torch.Tensor): Edge feature indices.
+
+        Returns:
+        - node_fea (torch.Tensor): Output node features after convolution layers.
+        """
+        node_fea = self.embedding_n(node_fea)
         edge_fea = self.embedding_e(edge_fea)
         node_fea = self.convs1(node_fea, edge_fea, edge_fea_idx)
         node_fea = self.convs2(node_fea, edge_fea, edge_fea_idx)
@@ -108,8 +138,17 @@ class CrystalGraphConvNet(nn.Module):
         return node_fea
 
     def readout(self, node_fea):
-        B,N,M=node_fea.shape
-        node_fea = self.conv_to_fc(node_fea.view(B,-1))  # batch
+        """
+        Readout function to aggregate node features.
+
+        Parameters:
+        - node_fea (torch.Tensor): Node features.
+
+        Returns:
+        - out (torch.Tensor): Aggregated node features.
+        """
+        B, N, M = node_fea.shape
+        node_fea = self.conv_to_fc(node_fea.view(B, -1))  # Flatten and pass through FC layer
         node_fea = self.act_fun(node_fea)
         node_fea = self.readout1(node_fea)
         node_fea = self.act_fun(node_fea)
@@ -121,39 +160,67 @@ class CrystalGraphConvNet(nn.Module):
 
 class MLP(nn.Module):
     def __init__(self, state_size, output_size):
-        super(MLP, self).__init__()
+        """
+        Initialize the MLP class.
 
+        Parameters:
+        - state_size (int): Size of the input state vector.
+        - output_size (int): Size of the output vector.
+        """
+        super(MLP, self).__init__()
         self.fc1 = nn.Linear(state_size, 64)
         self.fc2 = nn.Linear(64, 128)
         self.fc3 = nn.Linear(128, 64)
         self.fc4 = nn.Linear(64, output_size)
+
+        # Initialize weights
         self.initialize_weights()
 
     def initialize_weights(self):
+        """
+        Initialize the weights of the network using He initialization.
+        """
         for m in self.modules():
             if isinstance(m, nn.Linear):
-                # He 초기화를 사용하여 가중치를 초기화합니다.
                 nn.init.kaiming_uniform_(m.weight, mode='fan_in', nonlinearity='relu')
-                # 편향을 0으로 초기화합니다.
                 nn.init.zeros_(m.bias)
-            elif isinstance(m, nn.BatchNorm1d):
-                # 배치 정규화 레이어의 가중치를 초기화합니다.
-                nn.init.ones_(m.weight)
-                nn.init.zeros_(m.bias)
-                
+
     def forward(self, x):
+        """
+        Forward pass through the MLP.
+
+        Parameters:
+        - x (torch.Tensor): Input tensor.
+
+        Returns:
+        - x (torch.Tensor): Output tensor after passing through the network.
+        """
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
         x = self.fc4(x)
         return x
 
+
 class PPO(nn.Module):
-    def __init__(self, learning_rate, lmbda, gamma, alpha, beta, epsilon, discount_factor,
-                 location_num,dis):
+    def __init__(self, learning_rate, lmbda, gamma, alpha, beta, epsilon, discount_factor, location_num, dis):
+        """
+        Initialize the PPO class.
+
+        Parameters:
+        - learning_rate (float): Learning rate for the optimizer.
+        - lmbda (float): Lambda for GAE.
+        - gamma (float): Discount factor.
+        - alpha (float): Weight for the value loss.
+        - beta (float): Weight for the entropy loss.
+        - epsilon (float): Clipping parameter for PPO.
+        - discount_factor (float): Discount factor for rewards.
+        - location_num (int): Number of locations.
+        - dis (torch.Tensor): Distance matrix.
+        """
         super(PPO, self).__init__()
         self.node_fea_len = 32
-        self.final_node_len=32
+        self.final_node_len = 32
         self.edge_fea_len = 32
         self.gnn = CrystalGraphConvNet(orig_node_fea_len=4, orig_edge_fea_len=5, edge_fea_len=self.edge_fea_len, node_fea_len=self.node_fea_len, final_node_len=32, dis=dis)
         self.pi = MLP(32 + 10 + 5 + 5, 1).to(device)
@@ -167,41 +234,67 @@ class PPO(nn.Module):
         self.epsilon = epsilon
 
     def calculate_GNN(self, node_fea, edge_fea, edge_fea_idx):
+        """
+        Calculate the output of the GNN.
+
+        Parameters:
+        - node_fea (torch.Tensor): Node features.
+        - edge_fea (torch.Tensor): Edge features.
+        - edge_fea_idx (torch.Tensor): Edge feature indices.
+
+        Returns:
+        - torch.Tensor: Output of the GNN.
+        """
         return self.gnn(node_fea, edge_fea, edge_fea_idx)
 
     def calculate_pi(self, state_gnn, node_fea, edge_fea, edge_fea_idx, distance, tp_type):
-        # node_fea 9,13
-        # edge_fea 9,3,5
-        # edge_fea_idx 9, 3
-        # distance 9,3
-        # tp_type float=> 9 3 5
+        """
+        Calculate the policy.
+
+        Parameters:
+        - state_gnn (torch.Tensor): GNN state.
+        - node_fea (torch.Tensor): Node features.
+        - edge_fea (torch.Tensor): Edge features.
+        - edge_fea_idx (torch.Tensor): Edge feature indices.
+        - distance (torch.Tensor): Distance matrix.
+        - tp_type (float): Transporter type.
+
+        Returns:
+        - torch.Tensor: Action probabilities.
+        """
         action_variable = state_gnn[edge_fea_idx, :]
         edge_fea_tensor = edge_fea.repeat(1, 1, 2)
-
         distance_tensor = distance.unsqueeze(2).repeat(1, 1, 5)
-
         action_variable = torch.cat([action_variable, edge_fea_tensor], 2)
-
         action_variable = torch.cat([action_variable, distance_tensor], 2)
-
-        action_variable = torch.cat(
-            (action_variable, torch.full((edge_fea_idx.shape[0], edge_fea_idx.shape[1], 5), tp_type).to(device)), dim=2)
+        action_variable = torch.cat((action_variable, torch.full((edge_fea_idx.shape[0], edge_fea_idx.shape[1], 5), tp_type).to(device)), dim=2)
         action_probability = self.pi(action_variable)
         return action_probability
 
     def get_action(self, node_fea, edge_fea, edge_fea_idx, mask, distance, tp_type):
+        """
+        Get an action from the policy.
+
+        Parameters:
+        - node_fea (torch.Tensor): Node features.
+        - edge_fea (torch.Tensor): Edge features.
+        - edge_fea_idx (torch.Tensor): Edge feature indices.
+        - mask (torch.Tensor): Mask for invalid actions.
+        - distance (torch.Tensor): Distance matrix.
+        - tp_type (float): Transporter type.
+
+        Returns:
+        - action (int): Selected action.
+        - i (int): Start node index.
+        - j (int): End node index.
+        - prob (torch.Tensor): Probability of the selected action.
+        """
         with torch.no_grad():
             N, M = edge_fea_idx.shape
-            # print(edge_fea_idx)
-            # print(edge_fea)
-            # print(node_fea)
             state = self.calculate_GNN(node_fea, edge_fea, edge_fea_idx)
-            # print(state)
             probs = self.calculate_pi(state, node_fea, edge_fea, edge_fea_idx, distance, tp_type)
-            # print(probs) # type0 weight 작다
             logits_masked = probs - 1e8 * mask
-            # print(logits_masked)
-            prob = torch.softmax((logits_masked.flatten() - torch.max(logits_masked.flatten()))/self.temperature, dim=-1)
+            prob = torch.softmax((logits_masked.flatten() - torch.max(logits_masked.flatten())) / self.temperature, dim=-1)
             m = Categorical(prob)
             action = m.sample().item()
             i = int(action / M)
@@ -213,22 +306,42 @@ class PPO(nn.Module):
             return action, i, j, prob[action]
 
     def calculate_v(self, x):
+        """
+        Calculate the value function.
+
+        Parameters:
+        - x (torch.Tensor): Input tensor.
+
+        Returns:
+        - torch.Tensor: Value function output.
+        """
         return self.gnn.readout(x)
 
-    def update(self, data, probs, rewards, action, dones,step1,model_dir):
+    def update(self, data, probs, rewards, action, dones, step1, model_dir):
+        """
+        Update the policy and value function.
+
+        Parameters:
+        - data (list): List of episodes.
+        - probs (np.ndarray): Action probabilities.
+        - rewards (np.ndarray): Rewards.
+        - action (np.ndarray): Actions.
+        - dones (np.ndarray): Done flags.
+        - step1 (int): Current step.
+        - model_dir (str): Directory to save the model.
+
+        Returns:
+        - ave_loss (float): Average loss.
+        - v_loss (float): Value loss.
+        - p_loss (float): Policy loss.
+        """
         num = 0
         ave_loss = 0
         en_loss = 0
         v_loss = 0
         p_loss = 0
-        # data-> episode-> state [30,16,5]  node_fea (9,13),edge_fea (9,3,5),edge_fea_idx(9,3), distance (9,3) type (1), mask(9,3), 
-        # probs [30*15] numpy
-        # rewards [30*15]
-        # action [30*15]
-        # dones [30*15]
         probs = torch.tensor(probs, dtype=torch.float32).unsqueeze(1).to(device)
         rewards = torch.tensor(rewards, dtype=torch.float32).unsqueeze(1).to(device)
-
         dones = torch.tensor(dones, dtype=torch.float32).unsqueeze(1).to(device)
 
         tr = 0
@@ -236,21 +349,13 @@ class PPO(nn.Module):
         sw = 0
         for episode in data:
             for state in episode:
-
-                # node_fea=torch.tensor(state[0],dtype=torch.float32).to(device)
-                # edge_fea=torch.tensor(state[1],dtype=torch.float32).to(device)
-                # edge_fea_idx=torch.tensor(state[2],dtype=torch.int32).to(device)
-                # distance=torch.tensor(state[3],dtype=torch.float32).to(device)
-                # type
                 state_gnn = self.calculate_GNN(state[0], state[1], state[2])
 
                 if step < len(episode) - 1:
-                    #data(state):  node_fea (9,13),edge_fea (9,3,5),edge_fea_idx(9,3),  distance (9,3) type (1), mask(9,3)
-                    #cal_pi:  state_gnn, node_fea, edge_fea, edge_fea_idx, distance, tp_type)
                     prob_a = self.calculate_pi(state_gnn, state[0], state[1], state[2], state[3], state[4])
                     mask = state[5]
                     logits_maksed = prob_a - 1e8 * mask
-                    prob = torch.softmax((logits_maksed.flatten() - torch.max(logits_maksed.flatten()))/self.temperature, dim=-1)
+                    prob = torch.softmax((logits_maksed.flatten() - torch.max(logits_maksed.flatten())) / self.temperature, dim=-1)
                     pi_a = prob[int(action[sw])]
                     sw += 1
                     if tr == 0:
@@ -307,11 +412,6 @@ class PPO(nn.Module):
             torch.save({
                 'model_state_dict': self.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict(),
-
-            }, model_dir+'trained_model' + str(step1) + '.pth')
+            }, model_dir + 'trained_model' + str(step1) + '.pth')
 
         return ave_loss, v_loss, p_loss
-
-
-
-
