@@ -10,62 +10,62 @@ np.random.seed(1)
 random.seed(1)
 torch.manual_seed(1)
 
-class Problem_sampling:
+class ProblemSampling:
     def __init__(self,block_number,location_number,transporter_type,transporter_number,dis_high,dis_low,ready_high,tardy_high,gap):
-        self.Block_Number = block_number #30
-        self.Location_Number = location_number #10
-        self.Transporter_type = transporter_type # 2
-        self.Transporter_Number = transporter_number  # 6 3,3
+        self.block_number = block_number #30
+        self.location_number = location_number #10
+        self.transporter_type = transporter_type # 2
+        self.transporter_number = transporter_number  # 6 3,3
         upper_tri = np.random.uniform(dis_low, dis_high, (location_number, location_number))
         upper_tri = np.triu(upper_tri, 1)  # 대각선 아래 제거
         symmetric_matrix = upper_tri + upper_tri.T
         np.fill_diagonal(symmetric_matrix, 0)
-        self.Dis = symmetric_matrix.copy()
+        self.dis = symmetric_matrix.copy()
         self.ready_high=ready_high #250
         self.tardy_high=tardy_high #300
         self.dis_high=dis_high
         self.gap=gap #100
     def sample(self):
 
-        Block = np.zeros((self.Block_Number, 7))
-        transporter = np.zeros((self.Transporter_Number, 6))
-        for i in range(self.Block_Number):
-            v = np.random.choice(self.Location_Number, 2, False)
-            Block[i, 0], Block[i, 1] = v[0], v[1]
-            Block[i, 2] = self.Dis[int(Block[i, 0]), int(Block[i, 1])] / 80 / self.tardy_high   #processing time
-            Block[i, 3] = np.random.randint(0, self.ready_high) / self.tardy_high   # ready time
-            Block[i, 4] = np.random.randint(Block[i, 3] +self.gap,self.tardy_high ) / self.tardy_high - Block[i, 2]  # tardy time
+        block = np.zeros((self.block_number, 7))
+        transporter = np.zeros((self.transporter_number, 6))
+        for i in range(self.block_number):
+            v = np.random.choice(self.location_number, 2, False)
+            block[i, 0], block[i, 1] = v[0], v[1]
+            block[i, 2] = self.dis[int(block[i, 0]), int(block[i, 1])] / 80 / self.tardy_high   #processing time
+            block[i, 3] = np.random.randint(0, self.ready_high) / self.tardy_high   # ready time
+            block[i, 4] = np.random.randint(block[i, 3] +self.gap,self.tardy_high ) / self.tardy_high - Block[i, 2]  # tardy time
 
             weight = np.random.uniform(0, 100)
             if weight > 50:
-                Block[i, 5] = 0
-                Block[i, 6] = 1
+                block[i, 5] = 0
+                block[i, 6] = 1
             else:
-                Block[i, 5] = 1
-                Block[i, 6] = 0
+                block[i, 5] = 1
+                block[i, 6] = 0
 
-        Block = Block[Block[:,0].argsort()]
-        unique_values, counts = np.unique(Block[:, 0], return_counts=True)
+        block = block[block[:,0].argsort()]
+        unique_values, counts = np.unique(block[:, 0], return_counts=True)
         max_count = np.max(counts)
-        edge_fea_idx = -np.ones((self.Location_Number, max_count))
-        edge_fea = np.zeros((self.Location_Number, max_count, 5))
+        edge_fea_idx = -np.ones((self.location_number, max_count))
+        edge_fea = np.zeros((self.location_number, max_count, 5))
         step = 0
-        node_in_fea = np.zeros((self.Location_Number, 4))
-        step_to_ij = np.zeros((self.Location_Number, max_count))
+        node_in_fea = np.zeros((self.location_number, 4))
+        step_to_ij = np.zeros((self.location_number, max_count))
         for i in range(len(counts)):
             for j in range(max_count):
                 if j < counts[i]:
-                    edge_fea_idx[int(unique_values[i])][j] = int(Block[step, 1])
-                    edge_fea[int(unique_values[i])][j] = Block[step, 2:7]
+                    edge_fea_idx[int(unique_values[i])][j] = int(block[step, 1])
+                    edge_fea[int(unique_values[i])][j] = block[step, 2:7]
                     step_to_ij[int(unique_values[i])][j] = step
                     step += 1
 
-        node_in_fea[0, 0] =  int(self.Transporter_Number / 2)
-        node_in_fea[0, 2] = self.Transporter_Number-int(self.Transporter_Number / 2)
+        node_in_fea[0, 0] =  int(self.transporter_number / 2)
+        node_in_fea[0, 2] = self.transporter_number-int(self.transporter_number / 2)
         
 
-        for i in range(self.Transporter_Number):
-            if i < int(self.Transporter_Number / 2):
+        for i in range(self.transporter_number):
+            if i < int(self.transporter_number / 2):
                 transporter[i, 0] = 0  # TP type
                 transporter[i, 1] = 0  # TP heading point
                 transporter[i, 2] = 0  # TP arrival left time
@@ -73,7 +73,7 @@ class Problem_sampling:
                 transporter[i, 4] = -1  # action i
                 transporter[i, 5] = -1  # action j
 
-            if i >= int(self.Transporter_Number / 2):
+            if i >= int(self.transporter_number / 2):
                 transporter[i, 0] = 1  # TP type
                 transporter[i, 1] = 0  # TP heading point
                 transporter[i, 2] = 0  # TP arrival left time
@@ -81,7 +81,7 @@ class Problem_sampling:
                 transporter[i, 4] = -1  # action i
                 transporter[i, 5] = -1  # action j
 
-        return self.Block_Number, self.Transporter_Number, Block, transporter, edge_fea_idx, node_in_fea, edge_fea, self.Dis , step_to_ij
+        return self.block_number, self.transporter_number, block, transporter, edge_fea_idx, node_in_fea, edge_fea, self.dis , step_to_ij
 
 
 def simulation(B, T, transporter, block, edge_fea_idx, node_fea, edge_fea, dis, step_to_ij, tardy_high, mode,ppo):
@@ -115,7 +115,6 @@ def simulation(B, T, transporter, block, edge_fea_idx, node_fea, edge_fea, dis, 
     agent = np.random.randint(0, int(T/2)) #랜덤 트랜스포터 부터 지정
     node_fea[int(transporter[agent][1])][int(transporter[agent][0]) * 2] -= 1
     while unvisited_num > 0:
-
         # transporter (T,3) TP type / heading point / TP arrival time
         start_location = transporter[agent][1]
         distance = torch.tensor(dis[int(start_location)]/120/tardy_high, dtype=torch.float32).unsqueeze(1).repeat(1,edge_fea_idx.shape[1]).to(device)  #(n, e)
