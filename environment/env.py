@@ -12,6 +12,20 @@ torch.manual_seed(1)
 
 class ProblemSampling:
     def __init__(self,block_number,location_number,transporter_type,transporter_number,dis_high,dis_low,ready_high,tardy_high,gap):
+        """
+        Initialize the ProblemSampling class.
+
+        Parameters:
+        - block_number (int): Number of blocks.
+        - location_number (int): Number of locations.
+        - transporter_type (int): Number of transporter types.
+        - transporter_number (int): Number of transporters.
+        - dis_high (float): Upper limit for distance sampling.
+        - dis_low (float): Lower limit for distance sampling.
+        - ready_high (int): Maximum ready time.
+        - tardy_high (int): Maximum tardy time.
+        - gap (int): Minimum gap between ready and tardy times.
+        """
         self.block_number = block_number #30
         self.location_number = location_number #10
         self.transporter_type = transporter_type # 2
@@ -26,6 +40,20 @@ class ProblemSampling:
         self.dis_high=dis_high
         self.gap=gap #100
     def sample(self):
+        """
+        Sample a new problem instance.
+
+        Returns:
+        - block_number (int): Number of blocks.
+        - transporter_number (int): Number of transporters.
+        - block (np.ndarray): Array of block attributes.
+        - transporter (np.ndarray): Array of transporter attributes.
+        - edge_fea_idx (np.ndarray): Edge feature indices.
+        - node_in_fea (np.ndarray): Node input features.
+        - edge_fea (np.ndarray): Edge features.
+        - dis (np.ndarray): Distance matrix.
+        - step_to_ij (np.ndarray): Step indices for edges.
+        """
 
         block = np.zeros((self.block_number, 7))
         transporter = np.zeros((self.transporter_number, 6))
@@ -85,6 +113,34 @@ class ProblemSampling:
 
 
 def simulation(B, T, transporter, block, edge_fea_idx, node_fea, edge_fea, dis, step_to_ij, tardy_high, mode,ppo):
+    """
+    Simulate the transportation problem.
+
+    Parameters:
+    - B (int): Number of blocks.
+    - T (int): Number of transporters.
+    - transporter (np.ndarray): Array of transporter attributes.
+    - block (np.ndarray): Array of block attributes.
+    - edge_fea_idx (np.ndarray): Edge feature indices.
+    - node_fea (np.ndarray): Node input features.
+    - edge_fea (np.ndarray): Edge features.
+    - dis (np.ndarray): Distance matrix.
+    - step_to_ij (np.ndarray): Step indices for edges.
+    - tardy_high (int): Maximum tardy time.
+    - mode (str): Simulation mode.
+    - ppo (PPO): PPO agent.
+
+    Returns:
+    - reward_sum (float): Total reward.
+    - tardy_sum (float): Total tardiness.
+    - ett_sum (float): Total empty travel time.
+    - event (list): List of events during the simulation.
+    - episode (list): List of episodes during the simulation.
+    - actions (np.ndarray): Actions taken during the simulation.
+    - probs (np.ndarray): Probabilities of actions taken.
+    - rewards (np.ndarray): Rewards received.
+    - dones (np.ndarray): Done flags for episodes.
+    """
     transporter = transporter.copy()
     block = block.copy()
     edge_fea_idx = edge_fea_idx.copy()
@@ -398,6 +454,31 @@ def simulation(B, T, transporter, block, edge_fea_idx, node_fea, edge_fea, dis, 
 # 각각 action과 next_state로 분리하자
 def do_action(transporter, edge_fea_idx, node_fea, edge_fea, agent, i, j, dis, time, step_to_ij,
               tardy_high):
+    """
+    Perform the action of a transporter agent.
+
+    Parameters:
+    - transporter (np.ndarray): Array of transporter attributes.
+    - edge_fea_idx (np.ndarray): Edge feature indices.
+    - node_fea (np.ndarray): Node input features.
+    - edge_fea (np.ndarray): Edge features.
+    - agent (int): Index of the transporter agent.
+    - i (int): Index of the start node.
+    - j (int): Index of the end node.
+    - dis (np.ndarray): Distance matrix.
+    - time (float): Current simulation time.
+    - step_to_ij (np.ndarray): Step indices for edges.
+    - tardy_high (int): Maximum tardy time.
+
+    Returns:
+    - transporter (np.ndarray): Updated transporter attributes.
+    - edge_fea_idx (np.ndarray): Updated edge feature indices.
+    - node_fea (np.ndarray): Updated node input features.
+    - edge_fea (np.ndarray): Updated edge features.
+    - event_list (list): List of event details.
+    - ett (float): Empty travel time.
+    - td (float): Tardy time.
+    """
     past_location = int(transporter[agent][1])
     transporter[agent][3] = dis[int(transporter[agent][1]), i] /120 / tardy_high
     ett=-dis[int(transporter[agent][1]), i] /120 / tardy_high
@@ -425,7 +506,26 @@ def do_action(transporter, edge_fea_idx, node_fea, edge_fea, agent, i, j, dis, t
 def next_state(transporter, edge_fea_idx, node_fea, edge_fea,  tardiness, min_time,
                next_agent):
     
+    """
+    Update the state of the system after a time step.
 
+    Parameters:
+    - transporter (np.ndarray): Array of transporter attributes.
+    - edge_fea_idx (np.ndarray): Edge feature indices.
+    - node_fea (np.ndarray): Node input features.
+    - edge_fea (np.ndarray): Edge features.
+    - tardiness (float): Current total tardiness.
+    - min_time (float): Minimum time step for the next event.
+    - next_agent (int): Index of the next agent to act.
+
+    Returns:
+    - transporter (np.ndarray): Updated transporter attributes.
+    - edge_fea_idx (np.ndarray): Updated edge feature indices.
+    - node_fea (np.ndarray): Updated node input features.
+    - edge_fea (np.ndarray): Updated edge features.
+    - tardiness_next (float): Updated total tardiness.
+    - tardy (float): Incremental tardiness.
+    """
     transporter[:,2] -= min_time
     # node_fea
 
@@ -446,6 +546,16 @@ def next_state(transporter, edge_fea_idx, node_fea, edge_fea,  tardiness, min_ti
 
 
 def select_agent(transporter):
+    """
+    Select the next agent based on the minimum arrival time.
+
+    Parameters:
+    - transporter (np.ndarray): Array of transporter attributes.
+
+    Returns:
+    - agent (int): Index of the selected agent.
+    - min_time (float): Minimum time step for the next event.
+    """
     event=transporter[:,2]
     min_time=event.min()
     argmin = np.where( (min_time == transporter[:,2]) & (transporter[:,0]==0))[0]
@@ -460,11 +570,14 @@ def select_agent(transporter):
 
 def plot_gantt_chart(events, B, T):
     """
+    Plot a Gantt chart for the transporter events.
 
-    # event_list 현재 시간, ett,tardy,완료시간,tp,몇번,tardy,ett,reward
-
-
+    Parameters:
+    - events (list): List of event details.
+    - B (int): Number of blocks.
+    - T (int): Number of transporters.
     """
+
 
     # version 1:
     colorset = plt.cm.rainbow(np.linspace(0, 1, B))
