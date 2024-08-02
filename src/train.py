@@ -1,9 +1,15 @@
+import os
+import json
+import string
+
 import numpy as np
 
+from cfg_train import get_cfg
 from environment.env import *
 from agent.network import *
 import torch
-import vessl
+
+
 np.random.seed(1)
 random.seed(1)
 torch.manual_seed(1)
@@ -18,34 +24,38 @@ if __name__=="__main__":
     history_dir='/output/history/'
     if not os.path.exists(history_dir):
         os.makedirs(history_dir)
-
-    device='cuda'
-    block_number=50
-    location_number=25
-    transporter_type=2
-    transporter_number=10
-    dis_high=3000
-    dis_low=500
-    ready_high=100 
-    tardy_high=300
-    gap=100
-    K_epoch=2
-    Pr_sampler=Problem_sampling(block_number,location_number,transporter_type,transporter_number,dis_high,dis_low,ready_high,tardy_high,gap)
+    cfg = get_cfg()
+    if cfg.vessl==1:
+        import vessl
+        
+    device=torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    
+    block_number=cfg.block_number
+    location_number=cfg.location_number
+    transporter_type=cfg.transporter_type
+    transporter_number=cfg.transporter_number
+    dis_high=cfg.dis_high
+    dis_low=cfg.dis_low
+    ready_high=cfg.ready_high
+    tardy_high=cfg.tardy_high
+    gap=chf.gap
+    K_epoch=cfg.K_epoch
+    PrSampler=ProblemSampling(block_number,location_number,transporter_type,transporter_number,dis_high,dis_low,ready_high,tardy_high,gap)
     temp_dis=dis_low/Pr_sampler.Dis
     indices = np.diag_indices(min(temp_dis.shape))
     temp_dis[indices] = 0
     
     dis=torch.tensor(temp_dis,dtype=torch.float32).to(device)
-    ppo=PPO( learning_rate=0.001, lmbda=0.95, gamma=1, alpha=0.5, beta=0.01, epsilon=0.2, discount_factor=1,location_num=location_number,dis=dis)
-    number_of_validation=20
-    number_of_validation_batch=50
-    number_of_problem=10 # 한번에 몇개의 문제를
-    number_of_batch=20 # 문제당 몇 episode씩 한번에 학습할껀지
-    number_of_trial=1  #1, 10, 100, 1000 #이를 몇번 반복할껀지
+    ppo=PPO( learning_rate=cfg.lr, lmbda=cfg.lmbda, gamma=cfg.gamma, alpha=cfg.alpha, beta=cfg.beta, epsilon=cfg.epsilon, discount_factor=cfg.discount_factor,location_num=location_number,dis=dis)
+    number_of_validation=cfg.number_of_validation
+    number_of_validation_batch=cfg.number_of_validation_batch
+    number_of_problem=cfg.number_of_problem # 한번에 몇개의 문제를
+    number_of_batch=cfg.number_of_batch # 문제당 몇 episode씩 한번에 학습할껀지
+    number_of_trial=cfg.number_of_trial  #1, 10, 100, 1000 #이를 몇번 반복할껀지
     number_of_iteration=int(1001/number_of_trial)  # 전체 iteration #iteration 단위로 문제 변화
     validation=[]
-    validation_step = 10
-    Control_result=np.zeros((20,7,6))
+    validation_step = cfg.validation_step
+    control_result=np.zeros((20,7,6))
     history = np.zeros((number_of_iteration * number_of_trial,2))
     validation_history=np.zeros((int(1001/validation_step)+10,12))
     step = 0
@@ -69,23 +79,23 @@ if __name__=="__main__":
                 rs[k] = reward_sum
                 es[k] = ett_sum
                 ts[k] = tardy_sum
-            Control_result[temp_step, nu, 0] = rs.mean()
-            Control_result[temp_step, nu, 1] = rs.var()
-            Control_result[temp_step, nu, 2] = es.mean()
-            Control_result[temp_step, nu, 3] = es.var()
-            Control_result[temp_step, nu, 4] = ts.mean()
-            Control_result[temp_step, nu, 5] = ts.var()
+            control_result[temp_step, nu, 0] = rs.mean()
+            control_result[temp_step, nu, 1] = rs.var()
+            control_result[temp_step, nu, 2] = es.mean()
+            control_result[temp_step, nu, 3] = es.var()
+            control_result[temp_step, nu, 4] = ts.mean()
+            control_result[temp_step, nu, 5] = ts.var()
         temp_step += 1
     for nu, mod in enumerate(mode_list):
-        print(mod, Control_result[past_time_step:temp_step, nu, 0].mean(),
-              Control_result[past_time_step:temp_step, nu, 2].mean(),
-              Control_result[past_time_step:temp_step, nu, 4].mean())
+        print(mod, control_result[past_time_step:temp_step, nu, 0].mean(),
+              control_result[past_time_step:temp_step, nu, 2].mean(),
+              control_result[past_time_step:temp_step, nu, 4].mean())
 
     for i in range(number_of_iteration):
         problem=[]
         temp_step=0
         for j in range(number_of_problem):
-            B, T, b, tp, efi, nf, ef, dis, step_to_ij = Pr_sampler.sample()
+            B, T, b, tp, efi, nf, ef, dis, step_to_ij = PrSampler.sample()
             efi = efi.astype('int')
             problem.append([B, T, tp, b, efi, nf, ef, dis, step_to_ij, tardy_high])
 
