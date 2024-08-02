@@ -1,7 +1,7 @@
 import numpy as np
 
-from Simulation_DAN import *
-from Network_DAN import *
+from environment.env import *
+from agent.network import *
 import torch
 import vessl
 np.random.seed(1)
