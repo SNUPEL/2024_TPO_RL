@@ -1,4 +1,4 @@
-from Network_DAN import *
+from agent.network import *
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import torch
