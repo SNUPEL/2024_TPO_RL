@@ -9,12 +9,12 @@
 ## Project Overview
 - Project
     - Block transportation scheduling algorithm with graph reinforcement learning
-- Participant
-    - Seung woo Han, Seung-heon Oh
 - Superviser
     - Prof. Jong Hun Woo (SNU, KOREA)
 - Data provider
     - HD Korea Shipbuilding & Offshore Engineering (KSOE)
+- Paper
+    - [Crystal Graph Convolutional Neural Network-Based Reinforcement Learning for Adaptive Shipyard Block Transportation Scheduling](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5183857)
 
 ## Project Introduction
 We develop a block transportation scheduling algorithm for shipyards 
