@@ -22,6 +22,7 @@ We develop a block transportation scheduling algorithm for shipyards
 <br>
 The Block Transportation Scheduling Problem (BTSP) is a key logistics challenge in shipyards. <br>
 Our goal is to develop a scheduling algorithm that minimizes the total tardiness and empty travel time. <br>
+
 <img src="figure/TP_problem_info.png"/>
 
 - Objetcive
@@ -34,11 +35,6 @@ Our goal is to develop a scheduling algorithm that minimizes the total tardiness
     - Single loading constraint
     - Weight capacity constraint
     - Ready time constraint
-- Decision variable
-    - Transporter assignment
-    - Transportation sequence
-
-
 <br>
 
 ## Main Function
