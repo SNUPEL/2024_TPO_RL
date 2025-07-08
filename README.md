@@ -2,14 +2,18 @@
 
 |                 Developer                |               Developer               |                
 | :--------------------------------------: | :-----------------------------------: | 
-| [Seung-woo Han](https://github.com/SeungwooHH11) | [Seung-heon Oh](https://github.com/hyunjinei) |
+| [Seung Woo Han](https://github.com/SeungwooHH11) | [Seung-heon Oh](https://github.com/hyunjinei) |
 |         🧑‍💻 AI-Development               |       🧑‍💻 AI-Development               |                
 
 <br>
 
 ## Project Overview
+- Project
+    - Block transportation scheduling optimization with graph reinforcement learning
 - Superviser
     - Prof. Jong Hun Woo (SNU, KOREA)
+- Participant
+    - Seung woo Han, Seung-heon Oh
 - Data provider
     - HD Korea Shipbuilding & Offshore Engineering (KSOE)
 
