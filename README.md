@@ -7,7 +7,7 @@
 <br>
 
 ## Project Overview
-- Project
+- **Project**
     - Block transportation scheduling algorithm with graph reinforcement learning
 - Superviser
     - Prof. Jong Hun Woo (SNU, KOREA)
@@ -21,7 +21,7 @@
 We develop a block transportation scheduling algorithm for shipyards 
 <br>
 The Block Transportation Scheduling Problem (BTSP) is a key logistics challenge in shipyards. <br>
-Our goal is to develop a scheduling algorithm that minimizes the total tardiness and empty travel time. <br>
+Our goal is to develop a scalable scheduling algorithm capable of dynamic decision-making. <br>
 
 <img src="figure/TP_problem_info.png"/>
 
@@ -36,7 +36,6 @@ Our goal is to develop a scheduling algorithm that minimizes the total tardiness
     - Weight capacity constraint
     - Ready time constraint
 <br>
-
 ## Main Function
 
 ### 1️⃣ Overall framework
