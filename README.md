@@ -8,23 +8,24 @@
 <br>
 
 ## Project Overview
-
+- Superviser
+    - Prof. Jong Hun Woo (SNU, KOREA)
 - Data provider
     - HD Korea Shipbuilding & Offshore Engineering (KSOE)
 
 ## Project Introduction
 We develop a block transportation scheduling algorithm for shipyards based on graph neural network integrated deep reinforcement learning
 <br>
-The quay wall allocation problem (QWAP) is modeled as a flexible job shop scheduling problem (FJSP) with preemption and machine preference. The QWAP is formulated as a sequential decision-making problem based on Markov decision process. The scheduling agent is trained 
+The block transportation scheduling problem (BTSP) is logistic 
 
-<img src="figure/image-1.png"/>
+<img src="figure/Research Background_TP.png"/>
 
 <br>
 
 ## Main Function
 
 ### 1️⃣ Overall framework
-<img src="figure/image-2.png"/>
+<img src="figure/Algorithm framework_TP.png"/>
 
 <br>
 
