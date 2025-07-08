@@ -18,14 +18,14 @@ We develop a block transportation scheduling algorithm for shipyards based on gr
 <br>
 The block transportation scheduling problem (BTSP) is logistic 
 
-<img src="figure/Research Background_TP.png"/>
+<img src="figure/TP_problem_info.png"/>
 
 <br>
 
 ## Main Function
 
 ### 1️⃣ Overall framework
-<img src="figure/Algorithm framework_TP.png"/>
+<img src="figure/TP_algorithm_framework.png"/>
 
 <br>
 
