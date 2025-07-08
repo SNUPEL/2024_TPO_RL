@@ -23,7 +23,7 @@ We develop a block transportation scheduling algorithm for shipyards
 <br>
 The Block Transportation Scheduling Problem (BTSP) is a key logistics challenge in shipyards. <br>
 Our goal is to develop a **scalable scheduling algorithm capable of dynamic decision-making**. <br>
-### Problem overview
+
 <img src="figure/TP_problem_info.png"/>
 <br>
 
