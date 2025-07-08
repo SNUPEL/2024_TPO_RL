@@ -16,7 +16,7 @@
 - **Paper**
     - [Crystal Graph Convolutional Neural Network-Based Reinforcement Learning for Adaptive Shipyard Block Transportation Scheduling](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5183857)
     - EAAI (revision being proceeding)
-
+<br>
 
 ## Project Introduction
 We develop a block transportation scheduling algorithm for shipyards 
@@ -24,8 +24,9 @@ We develop a block transportation scheduling algorithm for shipyards
 The Block Transportation Scheduling Problem (BTSP) is a key logistics challenge in shipyards. <br>
 Our goal is to develop a **scalable scheduling algorithm capable of dynamic decision-making**. <br>
 
+### 1️⃣ Problem overview
 <img src="figure/TP_problem_info.png"/>
-
+<br>
 
 ## Main Function
 
