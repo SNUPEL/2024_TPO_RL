@@ -17,6 +17,7 @@
     - [Crystal Graph Convolutional Neural Network-Based Reinforcement Learning for Adaptive Shipyard Block Transportation Scheduling](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5183857)
     - EAAI (revision being proceeding)
 
+
 ## Project Introduction
 We develop a block transportation scheduling algorithm for shipyards 
 <br>
@@ -25,16 +26,6 @@ Our goal is to develop a **scalable scheduling algorithm capable of dynamic deci
 
 <img src="figure/TP_problem_info.png"/>
 
-- **Objetcive**
-    - Minimize the total tardiness and empty travel time 
-- **Problem configuration**
-    - Block: origin, desitination, ready time, due date, weight
-    - Transporter: speed, weight capacity
-    - Location: inter-location distance
-- **Constraint**
-    - Single loading constraint
-    - Weight capacity constraint
-    - Ready time constraint
 
 ## Main Function
 
