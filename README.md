@@ -35,7 +35,7 @@ Our goal is to develop a **scalable scheduling algorithm capable of dynamic deci
     - Single loading constraint
     - Weight capacity constraint
     - Ready time constraint
-<br>
+
 ## Main Function
 
 ### 1️⃣ Overall framework
