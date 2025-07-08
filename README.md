@@ -15,6 +15,7 @@
     - HD Korea Shipbuilding & Offshore Engineering (KSOE)
 - Paper
     - [Crystal Graph Convolutional Neural Network-Based Reinforcement Learning for Adaptive Shipyard Block Transportation Scheduling](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5183857)
+    - EAAI (revision being proceeding)
 
 ## Project Introduction
 We develop a block transportation scheduling algorithm for shipyards 
