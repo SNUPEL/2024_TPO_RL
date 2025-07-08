@@ -66,9 +66,8 @@ The block transportation scheduling problem (BTSP) is logistic
 
 ### 4️⃣ Scheduling agent with PPO algorithm
 #### 4.1 Network Structure
-<br>
 <img src="figure/TP_network_structure.png"/>
-<br>
+
 
 - **Representation module**
     - Two types of latent representation are extracted from the heterogeneous graphs and auxiliary matrix, respectively
