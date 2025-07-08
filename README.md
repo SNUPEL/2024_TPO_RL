@@ -4,8 +4,8 @@
 | :--------------------------------------: | :-----------------------------------: | 
 | [Seung Woo Han](https://github.com/SeungwooHH11) | [Seung-heon Oh](https://github.com/hyunjinei) |
 |         🧑‍💻 AI-Development               |       🧑‍💻 AI-Development               |                
-
 <br>
+
 ## Project Overview
 - Project
     - Block transportation scheduling algorithm with graph reinforcement learning
