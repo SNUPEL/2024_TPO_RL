@@ -6,19 +6,18 @@
 |         🧑‍💻 AI-Development               |       🧑‍💻 AI-Development               |                
 
 <br>
-
 ## Project Overview
 - Project
-    - Block transportation scheduling optimization with graph reinforcement learning
-- Superviser
-    - Prof. Jong Hun Woo (SNU, KOREA)
+    - Block transportation scheduling algorithm with graph reinforcement learning
 - Participant
     - Seung woo Han, Seung-heon Oh
+- Superviser
+    - Prof. Jong Hun Woo (SNU, KOREA)
 - Data provider
     - HD Korea Shipbuilding & Offshore Engineering (KSOE)
 
 ## Project Introduction
-We develop a block transportation scheduling algorithm for shipyards based on graph neural network integrated deep reinforcement learning
+We develop a block transportation scheduling algorithm for shipyards 
 <br>
 The block transportation scheduling problem (BTSP) is logistic 
 
