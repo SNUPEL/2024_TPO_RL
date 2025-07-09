@@ -38,11 +38,11 @@ Our goal is to develop a **scalable scheduling algorithm capable of dynamic deci
 ### 2️⃣ Markov decision process
 
 #### 2.1 State
-- a compound state representation composed of a heterogeneous graph and auxiliary matrix
-    - **heterogeneous graph**: a modified disjunctive graph for FJSP
-        - nodes representing quay walls and operations
-        - edges representing low preference / high preference / precedence constraints
-    - **auxiliary matrix**: a matrix for predicting the effects of the scheduling actions
+- State composed of unscheduled blocks and transporters
+    - **edge attributed graph**: compact and effective representation of block transportation statue
+        - nodes representing location which contain current transporter information
+        - edges representing blocks with origin and destination by disjunctive edge
+    - **Crystal graph convolutional neural network**: graph neural network that suitable for encoding edge attributed graph
 
 #### 2.2 Action
 - a combination of the vessel and quay-wall (machine assignment and job sequencing)
